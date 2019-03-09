@@ -1,7 +1,7 @@
 Package: MTLR
 Type: Package
 Title: Survival Prediction with Multi-Task Logistic Regression
-Version: 0.1.0
+Version: 0.2.0
 Author: Humza Haider
 Maintainer: Humza Haider <hshaider@ualberta.ca>
 URL: https://github.com/haiderstats/MTLR
@@ -20,6 +20,6 @@ RoxygenNote: 6.1.1
 LinkingTo: Rcpp, RcppArmadillo
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2018-12-10 17:58:19 UTC; humza
+Packaged: 2019-03-09 16:59:33 UTC; humza
 Repository: CRAN
-Date/Publication: 2018-12-18 23:12:36 UTC
+Date/Publication: 2019-03-09 17:22:41 UTC

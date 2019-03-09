@@ -6,10 +6,10 @@
 \usage{
 mtlr_cv(formula, data, time_points = NULL, nintervals = NULL,
   normalize = T, C1_vec = c(0.001, 0.01, 0.1, 1, 10, 100, 1000),
-  train_biases = T, seed_weights = NULL, previous_weights = T,
-  loss = c("ll"), nfolds = 5, foldtype = c("fullstrat",
-  "censorstrat", "random"), verbose = FALSE, threshold = 1e-05,
-  maxit = 5000, lower = -15, upper = 15)
+  train_biases = T, train_uncensored = T, seed_weights = NULL,
+  previous_weights = T, loss = c("ll", "concordance"), nfolds = 5,
+  foldtype = c("fullstrat", "censorstrat", "random"), verbose = FALSE,
+  threshold = 1e-05, maxit = 5000, lower = -15, upper = 15)
 }
 \arguments{
 \item{formula}{a formula object with the response to the left of the "~" operator. The response must be a survival object returned
@@ -34,6 +34,10 @@ of value tried to increase efficiency. Similarly for nfolds.}
 \item{train_biases}{if TRUE, biases will be trained before feature weights (and again trained while training feature weights). This
 has shown to speed up total training time.}
 
+\item{train_uncensored}{if TRUE, one round of training will occur assuming all event times are uncensored. This is done due to the non-convexity issue
+that arises in the presence of censored data. However if ALL data is censored we recommend setting this option to FALSE as it has shown to give poor
+results in this case.}
+
 \item{seed_weights}{the initialization weights for the biases and the features. If left as NULL all weights are initialized to zero. If seed_weights are
 specified then either nintervals or time_points must also be specified. The length of seed_weights should correspond to (number of features + 1)*(length of
 time_points) = (number of features + 1)*(nintervals + 1).}
@@ -42,8 +46,8 @@ time_points) = (number of features + 1)*(nintervals + 1).}
 speed up the computation time for cross-validation as we are providing weights which are (likely) close to the optimal weights. Note that this is
 done separately for each value of C1 so there is no parameter sharing between different values of C1, and instead only across the same value of C1.}
 
-\item{loss}{a string indicating the loss to optimize for which to choose the regularization parameter. Currently only the log-likelihood (ll)
-is supported.}
+\item{loss}{a string indicating the loss to optimize for which to choose the regularization parameter. Currently one can optimize for the log-likelihood ("ll")
+or concordance ("concordance"). See details regarding these losses.}
 
 \item{nfolds}{the number of internal cross validation folds, default is 5.}
 
@@ -76,13 +80,15 @@ Performing mtlr_cv will return the following:
 MTLR Internal Cross-Validation for Selecting C1.
 }
 \details{
-Currently only the log-likelihood loss is supported for optimizing C1. Here the loss considers censored and uncensored observations differently.
+The log-likelihood loss and concordance are supported for optimizing C1. Here the log-likelihood loss considers censored and uncensored observations differently.
 For uncensored observations, we assign a loss of the negative log probability assigned to the interval in which the observation had their event, \emph{e.g.}
 if an observation had a 20% chance of having its event between timepoint1 and timepoint2 and it did have it's event in that interval then the loss
 is -log(0.2). We want these probabilities to be large so we would normally want to maximize this value (since logs of probabilities are negative)
 but we take the negative and instead minimize the value, thus we want the lowest loss. For censored observations we take the log of the probability
 of survival at the time of censoring, \emph{e.g.} if an observation is censored at time = 42 we take the negative log of the survival probability assigned
 to time 42 as the loss.
+
+For the concordance loss, C1 is chosen to maximize the overall concordance when using the negative median as the "risk" score. This is completed using survConcordance in the survival package.
 }
 \examples{
 library(survival)
