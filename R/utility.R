@@ -16,27 +16,24 @@ get_param_influence <- function(mtlr_object){
 #We need some type of predict function for survival curves - here we build a spline to fit the survival model curve. This spline is
 #the montotone spline using the hyman filtering of the cubic Hermite spline method,
 #see https://en.wikipedia.org/wiki/Monotone_cubic_interpolation. Also see help(splinefun).
-#Note that we make an alteration to the method because if the last two time points
-#have the same probability (y value) then the spline is constant outside of the training data. We need this to be a decreasing function
-#outside the training data so instead we take the linear fit of (0,1) and the last time point we have (p,t*) and then apply this linear
-#function to all points outside of our fit.
+#Note that for timepoints outside of the fit the spline is constant, i.e. all probabilities outside of the max predicted_times will be constant.
 predict_prob <- function(survival_curve,predicted_times, time_to_predict){
   spline <- stats::splinefun(predicted_times, survival_curve, method = "hyman")
   maxTime <- max(predicted_times)
-  slope <- (1-spline(maxTime))/(min(predicted_times) - max(predicted_times))
   predictedProbabilities <- rep(0, length(time_to_predict))
-  linearChange <- which(time_to_predict > maxTime)
-  if(length(linearChange) > 0){
-    predictedProbabilities[linearChange] <- pmax(1 + time_to_predict[linearChange]*slope,0)
+  maxProb <- which(time_to_predict > maxTime)
+  if(length(maxProb) > 0){
+    #We enforce that times outside of the max time are constant.
+    predictedProbabilities[maxProb] <- spline(maxTime)
     #If time_to_predict is less than predicted_times then we will enforce this probability to be a max of 1.
-    #The spline fit does a linear line outside of the range of predicted_times.
-    predictedProbabilities[-linearChange] <- pmin(spline(time_to_predict[-linearChange]),1)
+    predictedProbabilities[-maxProb] <- pmin(spline(time_to_predict[-maxProb]),1)
   }
   else{
     predictedProbabilities <- pmin(spline(time_to_predict),1)
   }
   return(predictedProbabilities)
 }
+
 
 
 #We calculate the mean and median survival times assuming a monotone spline fit of the survival curve points.
@@ -121,6 +118,10 @@ loglik_loss <- function(object, newdata){
                                                          curves[,1],
                                                          event_times[index]
                             ))
+      censor_curves = curves[,(censor_ind +1), drop=F]
+      censor_event = event_times[censor_ind]
+      censor_prob <- mapply(function(x,y) predict_prob(x, curves[,1],y),
+                            censor_curves, censor_event)
       #Currently we add a value of 0.00001 to all values since otherwise we might take the log of 0.
       #This is clearly not ideal but shouldn't make a large impact especially since this is only used for selecting C1.
       if(type == "right"){
@@ -133,21 +134,21 @@ loglik_loss <- function(object, newdata){
     }else{
       left_right <- which(delta %in% c(0,2))
       interval <- which(delta %in% c(3))
-      left_right_prob <- sapply(left_right,
-                               function(index) predict_prob(curves[,index+1],
-                                                            curves[,1],
-                                                            event_times[index]
-                               ))
-      interval_probL <- sapply(interval,
-                              function(index) predict_prob(curves[,index+1],
-                                                           curves[,1],
-                                                           event_times[index]
-                              ))
-      interval_probU <- sapply(interval,
-                              function(index) predict_prob(curves[,index+1],
-                                                           curves[,1],
-                                                           event_times2[index]
-                              ))
+
+
+      left_right_curves = curves[,(left_right +1), drop=F]
+      left_right_event = event_times[left_right]
+      left_right_prob <- mapply(function(x,y) predict_prob(x, curves[,1],y),
+                            left_right_curves, left_right_event)
+
+      interval_curves = curves[,(interval +1), drop=F]
+      interval_eventL = event_times[interval]
+      interval_eventU = event_times2[interval]
+
+      interval_probL <- mapply(function(x,y) predict_prob(x, curves[,1],y),
+                               interval_curves, interval_eventL)
+      interval_probU <- mapply(function(x,y) predict_prob(x, curves[,1],y),
+                               interval_curves, interval_eventU)
 
       left_right_prob <- ifelse(left_right %in% which(delta==0), left_right_prob, 1 - left_right_prob)
       if(length(interval_probL)){

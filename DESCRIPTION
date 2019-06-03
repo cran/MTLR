@@ -1,7 +1,7 @@
 Package: MTLR
 Type: Package
 Title: Survival Prediction with Multi-Task Logistic Regression
-Version: 0.2.0
+Version: 0.2.1
 Author: Humza Haider
 Maintainer: Humza Haider <hshaider@ualberta.ca>
 URL: https://github.com/haiderstats/MTLR
@@ -13,13 +13,13 @@ License: GPL-2 | file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: Rcpp (>= 0.12.18), survival (>= 2.4.0)
-Suggests: ggplot2 (>= 3.0.0), reshape2 (>= 1.4.3), testthat, covr,
-        knitr, rmarkdown
+Suggests: ggplot2 (>= 3.0.0), reshape2 (>= 1.4.3), testthat, vdiffr (>=
+        0.3.0), covr, knitr, rmarkdown
 Depends: R (>= 3.4.0)
 RoxygenNote: 6.1.1
 LinkingTo: Rcpp, RcppArmadillo
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2019-03-09 16:59:33 UTC; humza
+Packaged: 2019-06-03 21:11:06 UTC; humza
 Repository: CRAN
-Date/Publication: 2019-03-09 17:22:41 UTC
+Date/Publication: 2019-06-03 21:30:03 UTC
